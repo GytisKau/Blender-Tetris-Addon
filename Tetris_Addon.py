@@ -17,10 +17,10 @@ from bpy.types import Operator, Panel
 
 
 class Properties(bpy.types.PropertyGroup):
-    level : bpy.props.IntProperty(default=1, name='')
+    level : bpy.props.IntProperty(default=1, name='', min=1, soft_max=10)
     block : bpy.props.BoolProperty(default=False, name='')
-    sizeX : bpy.props.IntProperty(default=10, name='')
-    sizeY : bpy.props.IntProperty(default=20, name='')
+    sizeX : bpy.props.IntProperty(default=10, name='', min=10, soft_max=50)
+    sizeY : bpy.props.IntProperty(default=20, name='', min=10, soft_max=50)
     
 colors = [
     'COLLECTION_COLOR_01',
@@ -148,7 +148,7 @@ game = Tetris(20, 10)
     
 
 class TetrisOperator(bpy.types.Operator):
-    """Operator witch starts the Tetris game"""
+    """Start Tetris"""
     bl_idname = "wm.play_tetris_operator"
     bl_label = "Play Tetris Operator"
 
@@ -164,12 +164,12 @@ class TetrisOperator(bpy.types.Operator):
         props = context.scene.properties
         global game
         
-        if event.type in {'RIGHTMOUSE'}:
+        if event.type in {'RIGHTMOUSE', 'ESC'} or game.state == "gameover":
             self.cancel(context)
             done = True
             return {'CANCELLED'}
-        if game.state == "gameover":
-            return {'CANCELLED'}
+        #if game.state == "gameover":
+        #    return {'CANCELLED'}
         
         if game.figure is None:
             game.new_figure()
@@ -183,13 +183,13 @@ class TetrisOperator(bpy.types.Operator):
         
     
         if event.value == 'PRESS':
-            if event.type == 'UP_ARROW':
+            if event.type in {'UP_ARROW', 'W'}:
                 game.rotate()
-            if event.type == 'DOWN_ARROW':
+            if event.type in {'DOWN_ARROW', 'S'}:
                 self.pressing_down = True
-            if event.type == 'LEFT_ARROW':
+            if event.type in {'LEFT_ARROW', 'A'}:
                 game.go_side(-1)
-            if event.type == 'RIGHT_ARROW':
+            if event.type in {'RIGHT_ARROW', 'D'}:
                 game.go_side(1)
             if event.type == 'SPACE':
                 game.go_space()
@@ -197,7 +197,7 @@ class TetrisOperator(bpy.types.Operator):
                 game.__init__(20, 10)
                 
         if event.value == 'RELEASE':
-            if event.type == 'DOWN_ARROW':
+            if event.type in {'DOWN_ARROW', 'S'}:
                 self.pressing_down = False
         
         # Hacky force update... idk how to do it otherwise
@@ -211,6 +211,7 @@ class TetrisOperator(bpy.types.Operator):
     def execute(self, context):
         props = context.scene.properties
         global game
+        
         
         self.done = False
         self.fps = 24
@@ -282,7 +283,7 @@ class Tetris_Panel(Panel):
         row.operator('wm.play_tetris_operator', text="Play", icon='PLAY')
         
         row = column.row(align=True)
-        row.label(text="Press the Right Mouse button to stop")
+        row.label(text="Press ESC or RMB to stop")
         
         row = column.row(align=True)
         row.prop(props, 'sizeX', text="Width")
